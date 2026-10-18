@@ -29,7 +29,7 @@ Download the archive for your platform from [Releases](https://github.com/vulcan
 | macOS Apple Silicon | `gbc-sprite-editor-macos-aarch64.zip` | Extract and open `GBC Sprite Editor.app` |
 | macOS Intel | `gbc-sprite-editor-macos-x86_64.zip` | Extract and open `GBC Sprite Editor.app` |
 
-Linux release binaries are built on Ubuntu 24.04 and require glibc 2.39 or newer, a working X11 or Wayland desktop, and OpenGL. Build from source for older distributions. Native file dialogs on Linux use the desktop's XDG portal service. macOS packages target macOS 11 or later and have an ad-hoc signature, not Apple notarization; downloaded builds may need approval through macOS Privacy & Security. Windows builds are not code signed.
+Linux release binaries are built on Ubuntu 24.04 and require glibc 2.39 or newer, a working X11 or Wayland desktop, and OpenGL. Build from source for older distributions. Native file dialogs on Linux use the desktop's XDG portal service. macOS packages target macOS 11 or later and have an ad-hoc signature, not Apple notarization; downloaded builds may need approval through macOS Privacy & Security. Windows builds are not code signed. The Windows x64 executable requires Windows 10 or later and the [Microsoft Visual C++ v14 x64 Redistributable](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist); install it if Windows reports a missing `VCRUNTIME140.dll`. The editor itself works offline.
 
 ### Build from source
 
