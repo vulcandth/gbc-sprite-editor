@@ -90,7 +90,7 @@ jobs:
         run: |
           mkdir -p "dist/$PACKAGE"
           cp "target/$BUILD_TARGET/release/gbc-sprite-editor" LICENSE README.md "dist/$PACKAGE/"
-          cp -R examples "dist/$PACKAGE/"
+          cp -R examples docs "dist/$PACKAGE/"
           tar -czf "dist/$PACKAGE.tar.gz" -C dist "$PACKAGE"
       - name: Package macOS application
         if: runner.os == 'macOS'
@@ -121,7 +121,7 @@ jobs:
           plutil -lint "$app/Contents/Info.plist"
           codesign --force --deep --sign - "$app"
           cp LICENSE README.md "dist/$PACKAGE/"
-          cp -R examples "dist/$PACKAGE/"
+          cp -R examples docs "dist/$PACKAGE/"
           ditto -c -k --sequesterRsrc --keepParent "dist/$PACKAGE" "dist/$PACKAGE.zip"
       - name: Package Windows executable
         if: runner.os == 'Windows'
@@ -132,7 +132,7 @@ jobs:
         run: |
           New-Item -ItemType Directory -Path "dist/$env:PACKAGE" -Force | Out-Null
           Copy-Item "target/$env:BUILD_TARGET/release/gbc-sprite-editor.exe", LICENSE, README.md -Destination "dist/$env:PACKAGE/"
-          Copy-Item examples -Destination "dist/$env:PACKAGE/" -Recurse
+          Copy-Item examples, docs -Destination "dist/$env:PACKAGE/" -Recurse
           Compress-Archive -Path "dist/$env:PACKAGE" -DestinationPath "dist/$env:PACKAGE.zip"
       - name: Upload downloadable archive
         uses: actions/upload-artifact@v7

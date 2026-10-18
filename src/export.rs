@@ -633,6 +633,52 @@ mod tests {
     }
 
     #[test]
+    fn mixed_source_sizes_use_one_global_hardware_object_height() {
+        // The opaque pixels below the short slice must never leak into its
+        // padding when the global hardware mode is 8x16.
+        let source = RgbaImage::from_pixel(16, 16, Rgba([20, 30, 40, 255]));
+        let project = project(vec![slice(0, 0, 8, 8), slice(8, 0, 8, 16)]);
+        let temp = tempfile::tempdir().unwrap();
+        for (object_height, expected_objects, expected_tiles) in [(8, 3, 3), (16, 2, 4)] {
+            let output = temp.path().join(format!("mode-{object_height}"));
+            let summary = export_project(
+                &project,
+                &source,
+                &output,
+                ExportOptions {
+                    object_height,
+                    tiles_per_row: 4,
+                },
+            )
+            .unwrap();
+            assert_eq!(
+                (summary.objects, summary.tiles),
+                (expected_objects, expected_tiles)
+            );
+            let rows = records(&output.join("objects.csv"));
+            assert_eq!(rows.len(), expected_objects);
+            for row in &rows {
+                assert_eq!(&row[11], "8");
+                assert_eq!(row[12].parse::<u32>().unwrap(), object_height);
+            }
+            if object_height == 16 {
+                for row in &rows {
+                    assert_eq!(row[9].parse::<usize>().unwrap() % 2, 0);
+                }
+                let atlas = image::open(output.join("tiles.png")).unwrap().to_rgba8();
+                for y in 0..8 {
+                    for x in 0..8 {
+                        assert_eq!(atlas.get_pixel(x, y)[3], 255);
+                        assert_eq!(atlas.get_pixel(8 + x, y)[3], 0);
+                        assert_eq!(atlas.get_pixel(16 + x, y)[3], 255);
+                        assert_eq!(atlas.get_pixel(24 + x, y)[3], 255);
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
     fn irregular_slices_pad_last_object_instead_of_sampling_neighbors() {
         let source = RgbaImage::from_pixel(32, 32, Rgba([20, 30, 40, 255]));
         let project = project(vec![slice(3, 5, 9, 9)]);

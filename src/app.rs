@@ -463,6 +463,7 @@ impl Editor {
             ui.selectable_value(&mut self.tool, Tool::Slice, "Place slice  B");
             ui.selectable_value(&mut self.tool, Tool::Origin, "Set origin  O");
             ui.separator();
+            ui.label("Source slice").on_hover_text("Cutout size in the PNG. Hardware objects use the single global export mode.");
             if ui.selectable_label(self.stamp == [8, 8], "8 × 8").clicked() {
                 self.stamp = [8, 8];
                 self.tool = Tool::Slice;
@@ -494,6 +495,16 @@ impl Editor {
                     }
                 });
             ui.checkbox(&mut self.pixel_grid, "Pixel grid");
+            ui.separator();
+            egui::ComboBox::from_id_salt("global-obj-size")
+                .selected_text(format!("All OBJs: 8×{}", self.object_height))
+                .show_ui(ui, |ui| {
+                    for height in [8, 16] {
+                        if ui.selectable_value(&mut self.object_height, height, format!("8×{height} — all cels")).changed() {
+                            self.warnings_dirty = true;
+                        }
+                    }
+                }).response.on_hover_text("LCDC.2 sets one size for all hardware OBJs. Source cutouts are split or transparently padded to this size on export.");
         });
     }
 
@@ -616,7 +627,7 @@ impl Editor {
                 });
                 ui.checkbox(&mut self.all_cels, "Show other cels");
                 ui.add_space(8.0);
-                section(ui, "SLICES · DRAW ORDER");
+                section(ui, "SLICES · EXPORT ORDER");
                 let mut select = None;
                 for (i, slice) in self.cel().slices.iter().enumerate() {
                     if ui
@@ -657,6 +668,7 @@ impl Editor {
             section(ui, "SLICE INSPECTOR");
             if let Some(index) = self.selected_slice {
                 let origin = [self.cel().origin_x, self.cel().origin_y];
+                let object_height = self.object_height;
                 let slice = &mut self.cel_mut().slices[index];
                 ui.add(egui::TextEdit::singleline(&mut slice.name).char_limit(256));
                 ui.horizontal(|ui| {
@@ -668,6 +680,13 @@ impl Editor {
                     ui.add(egui::DragValue::new(&mut slice.height).range(1..=256).prefix("H "));
                 });
                 ui.label(RichText::new(format!("Relative: {}, {}", slice.x-origin[0], slice.y-origin[1])).color(MUTED));
+                let columns = slice.width.div_ceil(8);
+                let rows = slice.height.div_ceil(object_height);
+                ui.label(RichText::new(format!("Export: {} × 8×{} OBJ", columns * rows, object_height)).color(ACCENT));
+                if columns * 8 != slice.width || rows * object_height != slice.height {
+                    ui.label(RichText::new(format!("Transparent padding to {}×{} pixels", columns * 8, rows * object_height)).small().color(MUTED));
+                }
+
                 ui.add(egui::DragValue::new(&mut slice.palette).range(0..=7).prefix("OBJ palette ")).on_hover_text("GB uses 0–1; GBC uses 0–7. Palette IDs are metadata, not color quantization.");
                 ui.horizontal(|ui| {
                     if ui.button("Duplicate").clicked() { self.duplicate(); }
@@ -719,7 +738,7 @@ impl Editor {
             ui.separator();
             section(ui, "HARDWARE CHECK");
             ui.horizontal(|ui| {
-                ui.label("OBJ size");
+                ui.label("Global OBJ size");
                 if ui.selectable_value(&mut self.object_height,8,"8×8").changed() { self.warnings_dirty = true; }
                 if ui.selectable_value(&mut self.object_height,16,"8×16").changed() { self.warnings_dirty = true; }
             });
@@ -1055,12 +1074,12 @@ impl Editor {
                 ui.heading("Export PNG + CSV");
                 ui.label("Creates a new folder containing tile artwork, individual slices, and origin-relative layout data.");
                 ui.horizontal(|ui| {
-                    ui.label("Hardware object size");
+                    ui.label("Global hardware OBJ size");
                     if ui.selectable_value(&mut self.object_height,8,"8 × 8").changed() { self.warnings_dirty = true; }
                     if ui.selectable_value(&mut self.object_height,16,"8 × 16").changed() { self.warnings_dirty = true; }
                 });
                 ui.add(egui::DragValue::new(&mut self.tiles_per_row).range(2..=64).speed(2).prefix("8×8 tiles per row: "));
-                if self.object_height==16 { ui.label("8×16 objects use consecutive top/bottom tiles with an even starting index."); }
+                if self.object_height==16 { ui.label("All exported objects are 8×16. Smaller cutouts are padded; larger ones are split. Tile pairs start at an even index."); }
                 ui.label("Original RGB colors are preserved. Color filtering and the transparent background are applied.");
                 if !self.warnings.is_empty() { ui.colored_label(Color32::from_rgb(239,191,112),format!("{} hardware warning(s). Review Hardware check before conversion.",self.warnings.len())); }
                 ui.separator();

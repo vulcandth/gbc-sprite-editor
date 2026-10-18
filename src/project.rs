@@ -578,17 +578,25 @@ mod tests {
     }
 
     #[test]
-    fn missing_source_preserves_unresolved_parent_components() {
+    fn missing_source_resolution_follows_platform_path_semantics() {
         let directory = tempfile::tempdir().unwrap();
         let project = Project {
             image_path: "images/../sprite.png".into(),
             ..Project::default()
         };
+        // Windows canonicalization removes `images/..` before filesystem
+        // traversal, even if `images` does not exist. Unix must traverse that
+        // component first, so our unresolved suffix correctly retains it.
+        let missing_suffix = if cfg!(windows) {
+            "sprite.png"
+        } else {
+            "images/../sprite.png"
+        };
         assert_eq!(
             resolve_image(&project, Some(&directory.path().join("scene.gbcs"))),
             dunce::canonicalize(directory.path())
                 .unwrap()
-                .join("images/../sprite.png")
+                .join(missing_suffix)
         );
         std::fs::create_dir(directory.path().join("images")).unwrap();
         assert_eq!(

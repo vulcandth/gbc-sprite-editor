@@ -162,6 +162,8 @@ In the atlas, custom rectangles are padded to whole 8×8 or 8×16 objects; indiv
 
 The editor validates palette numbers and reports likely hardware problems, including more than three visible RGB colors per object or shared palette within a cel, partial alpha, more than 40 objects in one cel, more than ten objects intersecting a scanline, and out-of-image slices. Warnings do not automatically alter the art.
 
+**An export never mixes 8×8 and 8×16 hardware objects.** The toolbar's **All OBJs** setting selects one size for every cel, as required by [Pan Docs: LCDC.2](https://github.com/gbdev/pandocs/blob/master/src/LCDC.md#lcdc2--obj-size). Source cutout sizes may differ: an 8×16 cutout becomes two objects in 8×8 mode; an 8×8 cutout becomes one transparently padded object in 8×16 mode. The inspector shows the resulting object count and padding.
+
 Object height is global for an export, matching the GB/CGB hardware's global 8×8 or 8×16 OBJ mode. Hardware color conversion, screen clipping, OAM ordering/priority, VRAM allocation, and interaction with other sprites remain your game's responsibility. A cel-level check cannot account for other cels displayed at the same time.
 
 ### Command-line export
