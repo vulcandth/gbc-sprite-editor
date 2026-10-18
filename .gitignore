@@ -1,0 +1,7 @@
+/target/
+/dist/
+/release-assets/
+.DS_Store
+Thumbs.db
+*.tmp
+*.log

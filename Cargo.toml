@@ -1,0 +1,24 @@
+[package]
+name = "gbc-sprite-editor"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.92"
+description = "Offline, free-positioned Game Boy and Game Boy Color sprite slicing editor"
+license = "MIT"
+repository = "https://github.com/vulcandth/gbc-sprite-editor"
+
+[dependencies]
+eframe = { version = "=0.34.3", default-features = false, features = ["default_fonts", "glow", "wayland", "x11"] }
+rfd = "0.17.2"
+image = { version = "0.25.10", default-features = false, features = ["png"] }
+csv = "1.4"
+pathdiff = "0.2"
+dunce = "1.0"
+tempfile = "3.27"
+
+[features]
+screenshot = []
+
+[profile.release]
+lto = "thin"
+strip = true
