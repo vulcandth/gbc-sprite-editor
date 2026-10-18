@@ -342,11 +342,17 @@ fn resolve_existing_path(path: &Path) -> PathBuf {
     if let Ok(resolved) = dunce::canonicalize(path) {
         return resolved;
     }
-    // A missing image still resolves correctly when its directory exists.
-    if let (Some(parent), Some(name)) = (path.parent(), path.file_name())
-        && let Ok(parent) = dunce::canonicalize(parent)
-    {
-        return parent.join(name);
+    // Canonicalize the existing prefix of missing paths, preserving all unknown
+    // components (including `..`) after it. This also handles macOS /var aliases
+    // and keeps references into not-yet-created asset directories portable.
+    let mut ancestor = path.parent();
+    while let Some(parent) = ancestor {
+        if let Ok(resolved) = dunce::canonicalize(parent)
+            && let Ok(suffix) = path.strip_prefix(parent)
+        {
+            return resolved.join(suffix);
+        }
+        ancestor = parent.parent();
     }
     // Do not collapse `..` lexically: it may follow a symlink, or a directory
     // that does not exist yet. Preserve its filesystem meaning for relinking.
@@ -580,7 +586,9 @@ mod tests {
         };
         assert_eq!(
             resolve_image(&project, Some(&directory.path().join("scene.gbcs"))),
-            directory.path().join("images/../sprite.png")
+            dunce::canonicalize(directory.path())
+                .unwrap()
+                .join("images/../sprite.png")
         );
         std::fs::create_dir(directory.path().join("images")).unwrap();
         assert_eq!(
